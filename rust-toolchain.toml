@@ -1,0 +1,6 @@
+[toolchain]
+channel = "nightly"
+components = [ "rust-std" ]
+targets = [ "riscv32imac-unknown-none-elf" ]
+#targets = [ "riscv32imac-esp-espidf.json" ]
+profile = "minimal"
