@@ -6,24 +6,43 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libm = "0.2"
+#libm = "0.2"
+smart-leds = "0.3.0"
+embedded-svc = { version = "0.25.0", default-features = false, features = [] }
+embedded-io = "0.4.0"
+#smoltcp = { version = "0.9.1", default-features = false, features = ["proto-igmp", "proto-ipv4", "socket-tcp", "socket-icmp", "socket-udp", "medium-ethernet", "proto-dhcpv4", "socket-raw", "socket-dhcpv4"] }
+#log = "0.4.17"
+heapless = { version = "0.7.14", default-features = false }
+
+#[dependencies.esp-wifi-sys]
+#git = "https://github.com/esp-rs/esp-wifi/"
+#features = ["esp32c6"]
+
+
+#[dependencies.esp-wifi]
+#git = "https://github.com/esp-rs/esp-wifi/"
+#features = ["esp32c6", "utils", "enumset", "wifi", "wifi-logs", "ps-min-modem"]
+
+[dependencies.esp-hal-smartled]
+version = "0.3.0"
+features = ["esp32c6"]
 
 #[dependencies.wat]
 #version = "1.0.66"
 #default-features = false
 #features = []
 
-[dependencies.wasmi]
-version = "0.30.0"
-default-features = false
+#[dependencies.wasmi]
+#version = "0.30.0"
+#default-features = false
 
 
-#[dependencies.rgb-led]
-#path = "../std-training/common/lib/rgb-led"
+[dependencies.rgb-led]
+path = "../std-training/common/lib/rgb-led"
 
 [dependencies.esp32c6-hal]
-version = "0.2.0"
-#features = [""]
+version = "0.3.0"
+#features = []
 
 [dependencies.esp-alloc]
 version = "0.3.0"
@@ -35,7 +54,7 @@ features = ["esp32c6", "panic-handler", "exception-handler", "esp-println", "pri
 [dependencies.esp-println]
 version = "0.5.0"
 default-features = false
-features = ["esp32c6", "uart", "colors", "critical-section"]
+features = ["esp32c6", "uart", "colors", "critical-section", "log"]
 
 [package.metadata.espflash]
 bootloader = "bootloader.bin" # Must be a binary file
