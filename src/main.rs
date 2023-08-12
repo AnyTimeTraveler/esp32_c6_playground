@@ -1,51 +1,71 @@
-//! //! RGB LED Demo
+//! SPI loopback test using DMA
 //!
-//! This example drives an SK68XX RGB LED that is connected to the GPIO8 pin.
-//! A RGB LED is connected to that pin on the ESP32-C6-DevKitC-1 and board.
+//! Folowing pins are used:
+//! SCLK    GPIO6
+//! MISO    GPIO2
+//! MOSI    GPIO7
+//! CS      GPIO10
 //!
-//! The demo will leverage the [`smart_leds`](https://crates.io/crates/smart-leds)
-//! crate functionality to circle through the HSV hue color space (with
-//! saturation and value both at 255). Additionally, we apply a gamma correction
-//! and limit the brightness to 10 (out of 255).
+//! Depending on your target and the board you are using you have to change the
+//! pins.
+//!
+//! This example transfers data via SPI.
+//! Connect MISO and MOSI pins to see the outgoing data is read as incoming
+//! data.
 
 #![no_std]
 #![no_main]
 
+use sdmmc_spi;
 use esp32c6_hal::{
     clock::ClockControl,
-    peripherals,
+    gpio::IO,
+    peripherals::Peripherals,
     prelude::*,
-    pulse_control::ClockSource,
+    spi::{Spi, SpiMode},
     timer::TimerGroup,
     Delay,
-    PulseControl,
     Rtc,
-    IO,
 };
+use esp32c6_hal::gpio::{GpioPin, Output};
+use esp32c6_hal::spi::FullDuplexMode;
 use esp_backtrace as _;
-use esp_hal_smartled::{smartLedAdapter, SmartLedsAdapter};
-use smart_leds::{
-    brightness,
-    gamma,
-    hsv::{hsv2rgb, Hsv},
-    SmartLedsWrite,
-};
+use esp_println::println;
+use sdmmc_spi::{DefaultSdMmcSpiConfig, DiskioDevice, SdMmcSpi};
+use switch_hal::{ActiveHigh, Switch};
 
-extern crate alloc;
+use defmt::global_logger;
 
+#[global_logger]
+struct Logger;
 
-use esp_alloc::EspHeap;
-use esp_backtrace as _;
+unsafe impl defmt::Logger for Logger{
+    fn acquire() {
+        todo!()
+    }
 
-#[global_allocator]
-static GLOBAL: EspHeap = EspHeap::empty();
+    unsafe fn flush() {
+        todo!()
+    }
 
+    unsafe fn release() {
+        todo!()
+    }
+
+    unsafe fn write(bytes: &[u8]) {
+        todo!()
+    }
+}
+use defmt as _;
+
+defmt::timestamp!("{=u32:us}", {
+    // NOTE(interrupt-safe) single instruction volatile read operation
+    unsafe { Peripherals::steal().PCR.split::<SystemParts>().read_volatile() }
+});
 
 #[entry]
 fn main() -> ! {
-    unsafe { GLOBAL.init(0x4080_0000 as *mut u8, 0x80000) }
-
-    let peripherals = peripherals::Peripherals::take();
+    let peripherals = Peripherals::take();
     let mut system = peripherals.PCR.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
@@ -71,46 +91,37 @@ fn main() -> ! {
     wdt0.disable();
     wdt1.disable();
 
-    // Configure RMT peripheral globally
-    let pulse = PulseControl::new(
-        peripherals.RMT,
-        &mut system.peripheral_clock_control,
-        ClockSource::APB,
-        0,
-        0,
-        0,
-    )
-        .unwrap();
-
-    // We use one of the RMT channels to instantiate a `SmartLedsAdapter` which can
-    // be used directly with all `smart_led` implementations
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-    let mut led = <smartLedAdapter!(1)>::new(pulse.channel0, io.pins.gpio8);
+    let sclk = io.pins.gpio6;
+    let miso = io.pins.gpio2;
+    let mosi = io.pins.gpio7;
+    let cs = io.pins.gpio10;
 
-    // Initialize the Delay peripheral, and use it to toggle the LED state in a
-    // loop.
-    let mut delay = Delay::new(&clocks);
+    let spi = Spi::new_no_cs(
+        peripherals.SPI2,
+        sclk,
+        mosi,
+        miso,
+        100u32.kHz(),
+        SpiMode::Mode0,
+        &mut system.peripheral_clock_control,
+        &clocks,
+    );
+    let switch: Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 10>, ActiveHigh> = Switch::new(cs.into_push_pull_output());
+    let mut sd = SdMmcSpi::<Spi<'_, esp32c6_hal::peripherals::SPI2, FullDuplexMode>, Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 10>, ActiveHigh>, DefaultSdMmcSpiConfig>::new(spi, switch);
 
-    let mut color = Hsv {
-        hue: 0,
-        sat: 255,
-        val: 255,
-    };
-    let mut data;
+    let delay = Delay::new(&clocks);
+
+    sd.initialize().unwrap();
+
+    println!("{:?}", sd.status());
+
+    let mut buf = [0u8; 512];
+    sd.read(&mut buf, 0).unwrap();
+
+    println!("Read: {:?}", buf);
 
     loop {
-        // Iterate over the rainbow!
-        for hue in 0..=255 {
-            color.hue = hue;
-            // Convert from the HSV color space (where we can easily transition from one
-            // color to the other) to the RGB color space that we can then send to the LED
-            data = [hsv2rgb(color)];
-            // When sending to the LED, we do a gamma correction first (see smart_leds
-            // documentation for details) and then limit the brightness to 10 out of 255 so
-            // that the output it's not too bright.
-            led.write(brightness(gamma(data.iter().cloned()), 10))
-                .unwrap();
-            delay.delay_ms(20u8);
-        }
+        delay.delay(1000);
     }
 }
