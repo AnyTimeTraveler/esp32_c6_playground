@@ -57,6 +57,7 @@ unsafe impl defmt::Logger for Logger{
     }
 }
 use defmt as _;
+use esp32c6_hal::system::SystemParts;
 
 defmt::timestamp!("{=u32:us}", {
     // NOTE(interrupt-safe) single instruction volatile read operation
