@@ -8,7 +8,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3ff7eb3f316534d83a8a2c3d1674ace8a5a71198eba31e2e2b597833f699b28"
 dependencies = [
- "critical-section",
+ "critical-section 1.1.2",
 ]
 
 [[package]]
@@ -22,6 +22,12 @@ name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
+
+[[package]]
+name = "bare-metal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8fe8f5a8a398345e52358e18ff07cc17a568fbca5c6f73873d3a62056309603"
 
 [[package]]
 name = "basic-toml"
@@ -67,6 +73,16 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "critical-section"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1706d332edc22aef4d9f23a6bb1c92360a403013c291af51247a737472dcae6"
+dependencies = [
+ "bare-metal",
+ "critical-section 1.1.2",
+]
 
 [[package]]
 name = "critical-section"
@@ -139,6 +155,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "269924c02afd7f94bc4cecbfa5c379f6ffcf9766b3408fe63d22c728654eccd0"
 dependencies = [
  "thiserror",
+]
+
+[[package]]
+name = "defmt-serial"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6971a5be9a473f92bb1a1e11ebbfc0e1f444fa08163a5f4d0f28389d236b515e"
+dependencies = [
+ "critical-section 0.2.8",
+ "defmt",
+ "embedded-hal 0.2.7",
+ "nb 1.1.0",
 ]
 
 [[package]]
@@ -253,7 +281,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83792eb7261a375bb838679fea2b45654b8f4a48da6bef10a96da5054aa81c7d"
 dependencies = [
- "critical-section",
+ "critical-section 1.1.2",
  "linked_list_allocator",
 ]
 
@@ -276,7 +304,7 @@ dependencies = [
  "bitfield",
  "bitflags 2.3.3",
  "cfg-if",
- "critical-section",
+ "critical-section 1.1.2",
  "embedded-can",
  "embedded-dma",
  "embedded-hal 0.2.7",
@@ -315,7 +343,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af6a511d37dba5fb8f01bf5485bc619a1a1959e1aaf666a7597df8fe615a0816"
 dependencies = [
- "critical-section",
+ "critical-section 1.1.2",
  "log",
 ]
 
@@ -334,6 +362,7 @@ name = "esp32_c6_playground"
 version = "0.1.0"
 dependencies = [
  "defmt",
+ "defmt-serial",
  "embedded-hal 0.2.7",
  "embedded-io 0.5.0",
  "embedded-svc",
@@ -352,7 +381,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c17de7bcc3ec3966ccb60a271968125d471bee348da445a80b970efca1db8b4f"
 dependencies = [
- "critical-section",
+ "critical-section 1.1.2",
  "vcell",
 ]
 
@@ -567,7 +596,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa3145d2fae3778b1e31ec2e827b228bdc6abd9b74bb5705ba46dcb82069bc4f"
 dependencies = [
  "bit_field",
- "critical-section",
+ "critical-section 1.1.2",
  "embedded-hal 0.2.7",
 ]
 
@@ -731,18 +760,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.44"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "611040a08a0439f8248d1990b111c95baa9c704c805fa1f62104b39655fd7f90"
+checksum = "97a802ec30afc17eee47b2855fc72e0c4cd62be9b4efe6591edde0ec5bd68d8f"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.44"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "090198534930841fab3a5d1bb637cde49e339654e606195f8d9c76eeb081dc96"
+checksum = "6bb623b56e39ab7dcd4b1b98bb6c8f8d907ed255b18de254088016b27a8ee19b"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -16,6 +16,7 @@
 #![no_std]
 #![no_main]
 
+use defmt::error;
 use sdmmc_spi;
 use esp32c6_hal::{
     clock::ClockControl,
@@ -30,39 +31,25 @@ use esp32c6_hal::{
 use esp32c6_hal::gpio::{GpioPin, Output};
 use esp32c6_hal::spi::FullDuplexMode;
 use esp_backtrace as _;
-use esp_println::println;
+use esp_println::{print, println};
 use sdmmc_spi::{DefaultSdMmcSpiConfig, DiskioDevice, SdMmcSpi};
 use switch_hal::{ActiveHigh, Switch};
 
-use defmt::global_logger;
+struct Uart;
+impl embedded_hal::serial::Write<u8> for Uart {
+    type Error = ();
 
-#[global_logger]
-struct Logger;
-
-unsafe impl defmt::Logger for Logger{
-    fn acquire() {
-        todo!()
+    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+        let c = char::from(word);
+        print!("{}", c);
+        Ok(())
     }
 
-    unsafe fn flush() {
-        todo!()
-    }
-
-    unsafe fn release() {
-        todo!()
-    }
-
-    unsafe fn write(bytes: &[u8]) {
-        todo!()
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
+        println!("flush");
+        Ok(())
     }
 }
-use defmt as _;
-use esp32c6_hal::system::SystemParts;
-
-defmt::timestamp!("{=u32:us}", {
-    // NOTE(interrupt-safe) single instruction volatile read operation
-    unsafe { Peripherals::steal().PCR.split::<SystemParts>().read_volatile() }
-});
 
 #[entry]
 fn main() -> ! {
@@ -92,11 +79,30 @@ fn main() -> ! {
     wdt0.disable();
     wdt1.disable();
 
+    defmt_serial::defmt_serial(Uart);
+
+    println!("Hello :)");
+    error!("Test :)");
+    println!("Hello :)");
+    error!("Test :)");
+    println!("Hello :)");
+    error!("Test :)");
+    error!("Test :)");
+
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let miso = io.pins.gpio4;
+    let mosi = io.pins.gpio5;
     let sclk = io.pins.gpio6;
-    let miso = io.pins.gpio2;
-    let mosi = io.pins.gpio7;
-    let cs = io.pins.gpio10;
+    let cs = io.pins.gpio7;
+    let mut debug = io.pins.gpio0.into_push_pull_output();
+
+    let delay = Delay::new(&clocks);
+
+    debug.set_high().unwrap();
+    delay.delay(100);
+    debug.set_low().unwrap();
+    delay.delay(100);
+    debug.set_high().unwrap();
 
     let spi = Spi::new_no_cs(
         peripherals.SPI2,
@@ -108,12 +114,17 @@ fn main() -> ! {
         &mut system.peripheral_clock_control,
         &clocks,
     );
-    let switch: Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 10>, ActiveHigh> = Switch::new(cs.into_push_pull_output());
-    let mut sd = SdMmcSpi::<Spi<'_, esp32c6_hal::peripherals::SPI2, FullDuplexMode>, Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 10>, ActiveHigh>, DefaultSdMmcSpiConfig>::new(spi, switch);
+    let switch: Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 7>, ActiveHigh> = Switch::new(cs.into_push_pull_output());
+    let mut sd = SdMmcSpi::<Spi<'_, esp32c6_hal::peripherals::SPI2, FullDuplexMode>, Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 7>, ActiveHigh>, DefaultSdMmcSpiConfig>::new(spi, switch);
 
-    let delay = Delay::new(&clocks);
-
-    sd.initialize().unwrap();
+    debug.set_low().unwrap();
+    delay.delay(100);
+    debug.set_high().unwrap();
+    let result = sd.initialize();
+    debug.set_low().unwrap();
+    delay.delay(100);
+    debug.set_high().unwrap();
+    result.unwrap();
 
     println!("{:?}", sd.status());
 
