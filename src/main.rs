@@ -33,7 +33,7 @@ use esp32c6_hal::spi::FullDuplexMode;
 use esp_backtrace as _;
 use esp_println::{print, println};
 use sdmmc_spi::{DefaultSdMmcSpiConfig, DiskioDevice, SdMmcSpi};
-use switch_hal::{ActiveHigh, Switch};
+use switch_hal::{ActiveHigh, ActiveLow, Switch};
 
 struct Uart;
 impl embedded_hal::serial::Write<u8> for Uart {
@@ -41,12 +41,12 @@ impl embedded_hal::serial::Write<u8> for Uart {
 
     fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
         let c = char::from(word);
-        print!("{}", c);
+        // print!("{}", c);
         Ok(())
     }
 
     fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        println!("flush");
+        // println!("flush");
         Ok(())
     }
 }
@@ -56,6 +56,8 @@ fn main() -> ! {
     let peripherals = Peripherals::take();
     let mut system = peripherals.PCR.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
+
+    // peripherals.I2S0.conf_sigle_data.write(|w|w);
 
     // Disable the watchdog timers. For the ESP32-C6, this includes the Super WDT,
     // and the TIMG WDTs.
@@ -90,10 +92,10 @@ fn main() -> ! {
     error!("Test :)");
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-    let miso = io.pins.gpio4;
-    let mosi = io.pins.gpio5;
-    let sclk = io.pins.gpio6;
-    let cs = io.pins.gpio7;
+    let miso = io.pins.gpio20;
+    let mosi = io.pins.gpio18;
+    let sclk = io.pins.gpio19;
+    let cs = io.pins.gpio23;
     let mut debug = io.pins.gpio0.into_push_pull_output();
 
     let delay = Delay::new(&clocks);
@@ -109,13 +111,13 @@ fn main() -> ! {
         sclk,
         mosi,
         miso,
-        100u32.kHz(),
+        250u32.kHz(),
         SpiMode::Mode0,
         &mut system.peripheral_clock_control,
         &clocks,
     );
-    let switch: Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 7>, ActiveHigh> = Switch::new(cs.into_push_pull_output());
-    let mut sd = SdMmcSpi::<Spi<'_, esp32c6_hal::peripherals::SPI2, FullDuplexMode>, Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 7>, ActiveHigh>, DefaultSdMmcSpiConfig>::new(spi, switch);
+    let switch: Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 23>, ActiveLow> = Switch::new(cs.into_push_pull_output());
+    let mut sd = SdMmcSpi::<Spi<'_, esp32c6_hal::peripherals::SPI2, FullDuplexMode>, Switch<GpioPin<Output<esp32c6_hal::gpio::PushPull>, 23>, ActiveLow>, DefaultSdMmcSpiConfig>::new(spi, switch);
 
     debug.set_low().unwrap();
     delay.delay(100);
