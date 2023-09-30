@@ -4,7 +4,6 @@ rustflags = [
     "-C", "link-arg=-Tlinkall.x",
     "-C", "force-frame-pointers",
 #    "-C", "link-arg=-Tld/rom_functions.x",
-    "-C", "link-arg=-Tdefmt.x",
 ]
 
 [build]
